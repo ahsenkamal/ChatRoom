@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+</head>
+<body>
+      <div class="chat-container">
+
+        <a href="/" id="leave">Leave Room</a>
+        
+        <h2 id="room-name"></h2>
+
+        <div style="display: flex;">
+          <div style="width: 40%; margin: 10px; background-color:dimgray;">
+            <h3 style="width: 100%; text-align: center;">Online</h3>
+            <ul id="users">
+            </ul>
+          </div>
+          <div style="width: 100%; background-color: lemonchiffon;">
+            <h3 style="width: 100%; text-align: center;">Chat</h3>
+            <div id="chat-messages" style="width: 100%; height: 300px; overflow-y: scroll;">
+            </div>
+            <div>
+              <form id="chat-form" style="width: 100%;">
+                <input style="width: 80%;" id="msg" type="text" placeholder="Type a Message" />
+                <input type="submit" value="Send" />
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.9.2/qs.min.js"
+        integrity="sha256-TDxXjkAUay70ae/QJBEpGKkpVslXaHHayklIVglFRT4="
+        crossorigin="anonymous"
+      ></script>
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        const chatForm = document.getElementById('chat-form');
+        const chatMessages = document.getElementById('chat-messages');
+        const roomName = document.getElementById('room-name');
+        const userList = document.getElementById('users');
+
+        function outputRoomName(room) {
+          roomName.innerText = room;
+        }
+
+        function outputUsers(users) {
+          userList.innerHTML = '';
+          users.forEach((user) => {
+            const li = document.createElement('li');
+            li.innerText = user.username;
+            userList.appendChild(li);
+          });
+        }
+
+        function outputMessage(msg){
+          const msgtxt = document.createElement('p');
+
+          msgtxt.innerText = msg.username + " " + msg.time + " : " + msg.text;
+
+          chatMessages.appendChild(msgtxt);
+        }
+
+        const { username, room } = Qs.parse(location.search, {
+          ignoreQueryPrefix: true,
+        });
+
+        const socket = io();
+
+        socket.emit('joinRoom', { username, room });
+
+        socket.on('roomUsers', ({ room, users }) => {
+          outputRoomName(room);
+          outputUsers(users);
+        });
+
+        socket.on('message', (message) => {
+          outputMessage(message);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        chatForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+
+          let msg = e.target.elements.msg.value;
+          msg = msg.trim();
+
+          if (!msg) {
+            return false;
+          }
+
+          socket.emit('chatMessage', msg);
+
+          e.target.elements.msg.value = '';
+          e.target.elements.msg.focus();
+        });
+      </script>
+</body>
+</html>
