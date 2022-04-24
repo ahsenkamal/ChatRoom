@@ -25,6 +25,8 @@ io.on('connection', (socket) => {
         const user = newUser(socket.id, username, room);
         socket.join(user.room);
 
+        socket.emit('message', formatMessage('System', `Welcome to ${user.room}`));
+
         socket.broadcast.to(user.room).emit('message', formatMessage('System',`${user.username} joined the room`));
 
         io.to(user.room).emit('roomUsers', {
